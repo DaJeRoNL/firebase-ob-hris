@@ -8,7 +8,6 @@ const PORT = process.env.PORT || 4000;
 // 1. Initialize Database Pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Add SSL settings for secure connection to Supabase (Render requires this)
   ssl: {
       rejectUnauthorized: false 
   }
