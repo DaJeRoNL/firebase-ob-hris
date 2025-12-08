@@ -41,9 +41,8 @@ async function setupDatabaseAndStartServer() {
     
     const pool = new Pool({
         connectionString: finalConnectionString,
-        ssl: {
-            rejectUnauthorized: false
-        }
+        // FINAL FIX: Use the simple 'ssl: true'
+        ssl: true
     });
 
     // 2. Simple Test Route (rest of your app logic)
