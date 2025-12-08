@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Raleway:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* FIX: Apply dark background to HTML element to prevent white flash on load/refresh */
         html {
@@ -59,46 +61,78 @@
             opacity: 1;
         }
 
-        /* MODIFIED: Slightly boosted glow for more vibrance */
-        @keyframes textGlow {
-            0%, 100% { text-shadow: 0 0 7px rgba(139,92,246,0.4), 0 0 12px rgba(16,185,129,0.3); }
-            50% { text-shadow: 0 0 16px rgba(139,92,246,0.7), 0 0 28px rgba(16,185,129,0.5); }
+        /* Input Styles */
+        .input-group {
+            width: 100%;
+            max-width: 350px;
+            margin-bottom: 1rem;
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 0.5s ease 3.2s forwards;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Raleway', sans-serif;
+        }
+        .login-input:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+            background: rgba(17, 24, 39, 0.8);
+        }
+
+        /* Buttons */
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+            max-width: 350px;
+            margin-top: 0.5rem;
+            opacity: 0;
+            animation: fadeIn 0.5s ease 3.5s forwards;
         }
 
         .action-button {
-            border: 1px solid;
+            flex: 1;
+            padding: 0.75rem;
             border-radius: 10px; 
-            font-weight: 500; 
-            transition: all 0.3s ease; 
-            padding: 0.75rem 1.5rem;
-            font-size: 1.125rem; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem; 
-            background-color: #1f2937; 
-            border-color: rgba(255, 255, 255, 0.15);
-            color: white;
-            text-align: center;
-            width: auto;
-            min-width: 250px;
-            max-width: 350px; 
-            opacity: 0; 
+            font-weight: 600; 
             cursor: pointer;
-            
-            /* Button fade in: starts at 3.5s, finishes at 4.0s */
-            animation: fadeIn 0.5s ease 3.5s forwards; 
+            transition: all 0.3s ease; 
+            border: none;
+            font-size: 1rem;
         }
-        .action-button:hover {
-            background-color: #111827;
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 0 20px 0 rgba(255, 255, 255, 0.15);
-            transform: scale(1.03);
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #9ca3af;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
         }
 
         /* Dev Mode Button - Subtle */
         .dev-mode-btn {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             font-size: 0.75rem;
             color: #6B7280;
             background: transparent;
@@ -114,7 +148,7 @@
             text-decoration: underline;
         }
 
-        /* FIX: Error message now uses max-height to occupy zero space when hidden */
+        /* Error Message */
         #error-message {
             max-height: 0;
             opacity: 0;
@@ -128,8 +162,35 @@
             font-size: 0.875rem;
             display: inline-block;
             text-align: center;
+            width: 100%;
+            max-width: 350px;
         }
         #error-message.visible {
+            max-height: 100px;
+            opacity: 1;
+            margin-top: 1rem;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        
+        /* Success Message */
+        #success-message {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            padding: 0 1rem; 
+            transition: opacity 0.5s ease, max-height 0.5s ease, margin-top 0.5s ease;
+            border-radius: 8px;
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            font-weight: 500;
+            font-size: 0.875rem;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+            max-width: 350px;
+        }
+        #success-message.visible {
             max-height: 100px;
             opacity: 1;
             margin-top: 1rem;
@@ -196,6 +257,11 @@
             80% { opacity: 1; }
             100% { width: 0; opacity: 0; }
         }
+        
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 7px rgba(139,92,246,0.4), 0 0 12px rgba(16,185,129,0.3); }
+            50% { text-shadow: 0 0 16px rgba(139,92,246,0.7), 0 0 28px rgba(16,185,129,0.5); }
+        }
 
         /* Animation sequence timing */
         .welcome-text {
@@ -242,22 +308,30 @@
         <div class="title-sequence">
             <h1 class="welcome-text">Welcome!</h1>
             <div class="title-line"></div>
-            <!-- Updated Text for HRIS Context -->
             <h1 class="pb-text">PB // HRIS</h1>
         </div>
         
-        <!-- Google Sign In Button -->
-        <button id="sign-in-btn" class="action-button">
-            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C42.012 36.49 44 30.8 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
-            Sign In with Google
-        </button>
+        <!-- Auth Inputs -->
+        <div class="input-group">
+            <input type="email" id="email" class="login-input" placeholder="Email Address" autocomplete="email">
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" class="login-input" placeholder="Password" autocomplete="current-password">
+        </div>
 
-        <!-- New Dev Mode Button (Subtle) -->
+        <!-- Buttons -->
+        <div class="btn-container">
+            <button id="signin-btn" class="action-button btn-primary">Sign In</button>
+            <button id="signup-btn" class="action-button btn-secondary">Sign Up</button>
+        </div>
+
+        <!-- Dev Mode Button -->
         <button id="dev-mode-btn" class="dev-mode-btn">
             ( Developer Bypass )
         </button>
 
         <div id="error-message"></div>
+        <div id="success-message"></div>
     </div>
     
     <footer class="footer">
@@ -265,96 +339,104 @@
     </footer>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // --- 1. CONFIGURATION ---
+        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+        
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBMjvZ-y6EmaDceeNWxoKuN62JsTQGqb04",
-            authDomain: "placebyte-lac.firebaseapp.com",
-            projectId: "placebyte-lac",
-            storageBucket: "placebyte-lac.appspot.com",
-            messagingSenderId: "235015794887",
-            appId: "1:235015794887:web:df62ef5c2dcd86dd9d0ee2"
-        };
-
-        const formatFirebaseError = (error) => {
-            if (!error || !error.code) return error.message || "Unexpected error occurred.";
-            const map = {
-                "auth/popup-closed-by-user": "Sign-in cancelled.",
-                "auth/network-request-failed": "Network issue. Please check your connection.",
-                "auth/cancelled-popup-request": "Another sign-in is in progress.",
-            };
-            return map[error.code] || error.message;
-        };
-
-        window.addEventListener("DOMContentLoaded", () => {
+        window.addEventListener("DOMContentLoaded", async () => {
             const loginContainer = document.getElementById("login-container");
-            const signInBtn = document.getElementById("sign-in-btn");
+            const emailInput = document.getElementById("email");
+            const passwordInput = document.getElementById("password");
+            const signInBtn = document.getElementById("signin-btn");
+            const signUpBtn = document.getElementById("signup-btn");
             const devBtn = document.getElementById("dev-mode-btn");
             const errorEl = document.getElementById("error-message");
+            const successEl = document.getElementById("success-message");
 
-            let app, auth;
+            const showMsg = (el, msg) => {
+                el.textContent = msg;
+                el.classList.add("visible");
+                setTimeout(() => el.classList.remove("visible"), 4000);
+            };
 
-            const signInWithGoogle = async () => {
-                const provider = new GoogleAuthProvider();
-                try {
-                    // Changed to Popup for better reliability in preview environments
-                    await signInWithPopup(auth, provider);
+            // --- 2. AUTH LOGIC ---
+            
+            // Sign In
+            const handleSignIn = async () => {
+                const email = emailInput.value;
+                const password = passwordInput.value;
+                
+                if (!email || !password) return showMsg(errorEl, "Please enter both email and password.");
+
+                signInBtn.textContent = "Loading...";
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                
+                if (error) {
+                    signInBtn.textContent = "Sign In";
+                    showMsg(errorEl, error.message);
+                } else {
                     window.location.href = "./index.html";
-                } catch (error) {
-                    errorEl.textContent = formatFirebaseError(error);
-                    errorEl.classList.add("visible");
                 }
             };
 
-            // Dev Mode Handler
+            // Sign Up
+            const handleSignUp = async () => {
+                const email = emailInput.value;
+                const password = passwordInput.value;
+
+                if (!email || !password) return showMsg(errorEl, "Please enter email and password to sign up.");
+                
+                signUpBtn.textContent = "Creating...";
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                signUpBtn.textContent = "Sign Up";
+
+                if (error) {
+                    showMsg(errorEl, error.message);
+                } else {
+                    showMsg(successEl, "Account created! Check your email to confirm.");
+                }
+            };
+
+            // Dev Mode
             const enterDevMode = () => {
                 sessionStorage.setItem('dev_bypass', 'true');
                 window.location.href = "./index.html";
             }
 
-            const startApp = async () => {
+            // Session Check
+            const checkSession = async () => {
                 try {
-                    app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
+                    const { data: { session } } = await supabase.auth.getSession();
 
-                    // Check if already signed in
-                    onAuthStateChanged(auth, (user) => {
-                        if (user) {
-                            window.location.href = "./index.html";
-                        } else {
-                            // Show login container (animations start via CSS)
-                            setTimeout(() => {
-                                loginContainer.classList.remove("hidden");
-                                loginContainer.classList.add("visible");
-                            }, 300);
-                        }
-                    });
-
-                    signInBtn.addEventListener("click", signInWithGoogle);
-                    devBtn.addEventListener("click", enterDevMode);
-
+                    if (session) {
+                        window.location.href = "./index.html";
+                    } else {
+                        // Show login container (animations start via CSS)
+                        setTimeout(() => {
+                            loginContainer.classList.remove("hidden");
+                            loginContainer.classList.add("visible");
+                        }, 300);
+                    }
                 } catch (error) {
-                    setTimeout(() => {
-                        errorEl.textContent = `Init Error: ${error.message}`;
-                        errorEl.classList.add("visible");
-                    }, 4000); 
-
+                    console.error("Session check error:", error);
                     loginContainer.classList.remove("hidden");
                     loginContainer.classList.add("visible");
                 }
             };
 
+            signInBtn.addEventListener("click", handleSignIn);
+            signUpBtn.addEventListener("click", handleSignUp);
+            devBtn.addEventListener("click", enterDevMode);
+
             document.documentElement.classList.add("dark");
-            startApp();
+            
+            // Initialize app
+            checkSession();
         });
 
-        // --- ORIGINAL PARALLAX LOGIC ---
+        // --- 3. RESTORED COMPLEX BACKGROUND LOGIC ---
         (() => {
             const bg = document.getElementById("bg-overlay");
             if (!bg) return;
