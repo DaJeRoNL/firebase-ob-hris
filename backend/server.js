@@ -1,7 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-const { Pool } = require('pg');
-const dns = require('dns');
+import express from 'express';
+import cors from 'cors';
+import pg from 'pg';
+import dns from 'dns';
+
+// Destructure Pool from the pg default export
+const { Pool } = pg;
 
 const app = express();
 const PORT = process.env.PORT || 4000; 
