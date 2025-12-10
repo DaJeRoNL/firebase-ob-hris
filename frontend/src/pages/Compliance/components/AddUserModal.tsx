@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, UserPlus, MagnifyingGlass, Check } from '@phosphor-icons/react';
-import { Person } from '../../types';
+import { Person } from '../types';
 import FlagDot from './ui/FlagDot';
 
 // Mock list of "potential" employees not yet in compliance
