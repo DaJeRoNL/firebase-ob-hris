@@ -1,5 +1,5 @@
 import { X, User, MapPin, Briefcase, IdentificationCard, Trash, Warning, CalendarCheck, ShieldCheck } from '@phosphor-icons/react';
-import { Person } from '../../types';
+import { Person } from '../types';
 import FlagDot from './ui/FlagDot';
 
 interface Props {
