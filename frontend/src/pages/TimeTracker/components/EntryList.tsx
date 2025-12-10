@@ -1,7 +1,7 @@
 // frontend/src/pages/TimeTracker/components/EntryList.tsx
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { ChartBar, Plus, Trash, Info, FirstAid, Smiley, User, Flag, Clock, CaretDown, CaretUp, Stack } from '@phosphor-icons/react';
-import type { TimeEntry } from '../../../types'; // Importing as type
+import type { TimeEntry } from '../../../types'; 
 import { LeaveRequest } from '../types';
 import { getLocalDateStr, calculateDuration, getHourMarker, formatTime, getSecondsFromTime } from '../utils';
 
@@ -19,24 +19,30 @@ interface Props {
     isRunning: boolean;
     startTime: Date | null;
     seconds: number;
+    onExpandedChange?: (isExpanded: boolean) => void;
 }
 
 export default function EntryList({ 
     selectedDate, entries, leaveRequests, currentClientId, 
     onManualAdd, onUpdate, onNoteUpdate, onAddNote, onDelete, onShowTimeline,
-    isRunning, startTime, seconds 
+    isRunning, startTime, seconds, onExpandedChange
 }: Props) {
     const [hoveredEntryId, setHoveredEntryId] = useState<string | null>(null);
     const [showOlder, setShowOlder] = useState(false);
     const [hasScrollBelow, setHasScrollBelow] = useState(false);
     
-    // Refs
     const closeTimerRef = useRef<number | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const selectedDateStr = getLocalDateStr(selectedDate);
     const isSelectedDateFuture = selectedDateStr > getLocalDateStr(new Date());
     const isToday = selectedDateStr === getLocalDateStr(new Date());
+
+    useEffect(() => {
+        if (onExpandedChange) {
+            onExpandedChange(showOlder);
+        }
+    }, [showOlder]);
 
     // --- DATA PREPARATION ---
     const displayEntries = useMemo(() => {
@@ -88,14 +94,11 @@ export default function EntryList({
     const checkScroll = () => {
         if (scrollContainerRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-            // Show arrow if content exceeds view by > 10px
             setHasScrollBelow(scrollHeight - scrollTop > clientHeight + 10);
         }
     };
 
     useEffect(() => {
-        // UPDATED: Increased timeout to 600ms to allow the 500ms CSS transition to finish 
-        // before checking scroll height. This prevents the arrow from sticking.
         const t = setTimeout(checkScroll, 600);
         return () => clearTimeout(t);
     }, [displayEntries, showOlder]);
@@ -149,7 +152,6 @@ export default function EntryList({
             );
         }
 
-        // Calculate Reverse Index
         const displayIndex = displayEntries.length - idx;
 
         return (
@@ -189,7 +191,8 @@ export default function EntryList({
     };
 
     return (
-        <div className="glass-card p-0 overflow-hidden flex flex-col h-[750px] !shadow-none relative">
+        // UPDATED: h-full to take remaining vertical space in the parent flex column
+        <div className="glass-card p-0 overflow-hidden flex flex-col h-full !shadow-none relative">
             {/* Header */}
             <div className="p-6 pb-2 shrink-0 z-10">
                 <div className="flex justify-between items-center mb-4">

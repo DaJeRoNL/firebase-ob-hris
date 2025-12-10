@@ -17,7 +17,7 @@ import UpcomingLeavesWidget from './components/UpcomingLeavesWidget';
 import TimelineModal from './components/TimelineModal';
 import LeaveModal from './components/LeaveModal';
 import { StatusModals } from './components/StatusModals';
-import TimezoneDisplay from './components/TimezoneDisplay'; // New Import
+import TimezoneDisplay from './components/TimezoneDisplay';
 
 export default function TimeTracker() {
   const { currentClientId } = useAuth();
@@ -30,6 +30,7 @@ export default function TimeTracker() {
   // -- Page State --
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showTimeline, setShowTimeline] = useState(false);
+  const [calendarCondensed, setCalendarCondensed] = useState(false);
 
   // -- Handlers --
   const handleToggleTimer = () => {
@@ -40,7 +41,6 @@ export default function TimeTracker() {
     
     if (sel > today && !timer.isRunning) return alert("Cannot start live tracker for a future date.");
 
-    // Check Sick Leave
     if (leave.activeSickLeave) {
         leave.setShowEndSickModal(true);
         return;
@@ -50,16 +50,16 @@ export default function TimeTracker() {
       timer.stopTimer();
     } else {
       timer.startTimer();
-      setSelectedDate(new Date()); // Jump to today
+      setSelectedDate(new Date()); 
     }
   };
 
   const isSelectedDateFuture = getLocalDateStr(selectedDate) > getLocalDateStr(new Date());
 
   return (
-    <div className="p-8 animate-fade-in text-[var(--text-main)] relative">
-      {/* Header with Timezone Widget */}
-      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    // UPDATED: h-full and flex-col to enable full-height layout
+    <div className="p-8 animate-fade-in text-[var(--text-main)] relative h-full flex flex-col">
+      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 shrink-0">
         <div>
             <h1 className="text-2xl font-bold font-['Montserrat']">Time & Monitoring</h1>
             <p className="text-sm opacity-70">Track your work hours and leave</p>
@@ -67,37 +67,48 @@ export default function TimeTracker() {
         <TimezoneDisplay />
       </header>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* UPDATED: flex-1 and min-h-0 ensure this section fills the remaining height but doesn't overflow parent */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start flex-1 min-h-0">
         
-        {/* LEFT COLUMN: Calendar & List */}
-        <div className="lg:col-span-2 space-y-6">
-            <CalendarWidget 
-                selectedDate={selectedDate} 
-                onDateSelect={setSelectedDate}
-                entries={timeEntries.entries}
-                leaveRequests={leave.requests}
-                currentClientId={currentClientId}
-                isRunning={timer.isRunning}
-            />
-            <EntryList 
-                selectedDate={selectedDate}
-                entries={timeEntries.entries}
-                leaveRequests={leave.requests}
-                currentClientId={currentClientId}
-                onManualAdd={() => timeEntries.addManual(selectedDate, leave.requests)}
-                onUpdate={(id, field, val) => timeEntries.updateEntryTime(id, field, val, leave.requests)}
-                onNoteUpdate={timeEntries.updateEntryNoteLine}
-                onAddNote={timeEntries.addNote}
-                onDelete={timeEntries.deleteEntry}
-                onShowTimeline={() => setShowTimeline(true)}
-                isRunning={timer.isRunning}
-                startTime={timer.startTime}
-                seconds={timer.seconds}
-            />
+        {/* LEFT COLUMN: Now a Flex Column to manage Calendar/EntryList height distribution */}
+        <div className="lg:col-span-2 flex flex-col gap-6 h-full transition-all duration-500">
+            
+            {/* Calendar: shrink-0 ensures it keeps its natural height */}
+            <div className="shrink-0">
+                <CalendarWidget 
+                    selectedDate={selectedDate} 
+                    onDateSelect={setSelectedDate}
+                    entries={timeEntries.entries}
+                    leaveRequests={leave.requests}
+                    currentClientId={currentClientId}
+                    isRunning={timer.isRunning}
+                    isCondensed={calendarCondensed}
+                />
+            </div>
+
+            {/* EntryList: flex-1 ensures it fills all remaining vertical space */}
+            <div className="flex-1 min-h-0">
+                <EntryList 
+                    selectedDate={selectedDate}
+                    entries={timeEntries.entries}
+                    leaveRequests={leave.requests}
+                    currentClientId={currentClientId}
+                    onManualAdd={() => timeEntries.addManual(selectedDate, leave.requests)}
+                    onUpdate={(id, field, val) => timeEntries.updateEntryTime(id, field, val, leave.requests)}
+                    onNoteUpdate={timeEntries.updateEntryNoteLine}
+                    onAddNote={timeEntries.addNote}
+                    onDelete={timeEntries.deleteEntry}
+                    onShowTimeline={() => setShowTimeline(true)}
+                    isRunning={timer.isRunning}
+                    startTime={timer.startTime}
+                    seconds={timer.seconds}
+                    onExpandedChange={setCalendarCondensed}
+                />
+            </div>
         </div>
 
-        {/* RIGHT COLUMN: Timer & Stats */}
-        <div className="space-y-4 lg:col-span-1 sticky top-6">
+        {/* RIGHT COLUMN: Just scrollable naturally if needed */}
+        <div className="space-y-4 lg:col-span-1 h-full overflow-y-auto custom-scrollbar pr-2">
             <StatsSidebar 
                 entries={timeEntries.entries} 
                 currentClientId={currentClientId}
@@ -120,25 +131,8 @@ export default function TimeTracker() {
       </div>
 
       {/* MODALS */}
-      {showTimeline && (
-        <TimelineModal 
-            date={selectedDate} 
-            entries={timeEntries.entries} 
-            leaveRequests={leave.requests}
-            currentClientId={currentClientId}
-            onClose={() => setShowTimeline(false)} 
-        />
-      )}
-      
-      {leave.showLeavePopup && (
-        <LeaveModal 
-            form={leave.form} 
-            setForm={leave.setForm} 
-            onSubmit={() => leave.submit(timer.isRunning ? timer.stopTimer : undefined)} 
-            onClose={() => leave.setShowLeavePopup(false)} 
-        />
-      )}
-
+      {showTimeline && <TimelineModal date={selectedDate} entries={timeEntries.entries} leaveRequests={leave.requests} currentClientId={currentClientId} onClose={() => setShowTimeline(false)} />}
+      {leave.showLeavePopup && <LeaveModal form={leave.form} setForm={leave.setForm} onSubmit={() => leave.submit(timer.isRunning ? timer.stopTimer : undefined)} onClose={() => leave.setShowLeavePopup(false)} />}
       <StatusModals states={leave} />
     </div>
   );
